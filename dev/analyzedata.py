@@ -13,7 +13,9 @@ class AnalyzeData():
         if status:
             plt.polar(self.theta, self.dB, '.', color = 'blue')
         else:
-            plt.plot(self.theta, self.dB, '.', color = 'blue')       
+            plt.plot(self.theta, self.dB, '.', color = 'blue')
+            plt.xlabel("θ")
+            plt.ylabel("dB")
         plt.savefig(name)
         plt.close()
         
@@ -90,6 +92,9 @@ class AnalyzeData():
             if abs(self.dB[k] - dB) < (0.5 - (self.delta + 1) * 0.1):
                 print(self.dB[k], dB)
                 break
+            else:
+                k = i
+        print(f"3dB = {self.dB[k]}, max = {self.dB[i]}")
         return 2 * abs(self.theta[k] - self.theta[i])
         
     def get_zeros(self):
