@@ -11,7 +11,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        toolbar = ToolBar(self)
+        self.toolbar = ToolBar(self)
         
         self.resize(640, 480)
         self.move(0,0)
@@ -30,10 +30,10 @@ class MainWindow(QMainWindow):
             pass
         
     def import_data(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file', '/home')[0]
+        fname = QFileDialog.getOpenFileName(self, 'Open file', '/home', 'Текстовый файл (*.txt)\nТаблица CSV (*.csv)\n')[0]
         if fname:
             im = ImportData(self, fname)     
-            im.show()  
+            im.show()
             
 
 
