@@ -3,8 +3,10 @@ from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
 from dev.importdata import ImportData
+from dev.setting import Setting
 from GUI.toolbar import ToolBar
 import sys
+import os
 
 class MainWindow(QMainWindow):
 
@@ -15,7 +17,7 @@ class MainWindow(QMainWindow):
         
         self.resize(640, 480)
         self.move(0,0)
-
+        
         self.setWindowTitle('CSTpy')
         self.show()
 
@@ -34,7 +36,10 @@ class MainWindow(QMainWindow):
         if fname:
             im = ImportData(self, fname)     
             im.show()
-            
+
+    def open_settings(self):
+            setting = Setting(self)
+            setting.show()
 
 
 

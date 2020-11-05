@@ -56,7 +56,6 @@ class AnalyzeData():
         '''
         delta = self.delta
         count = (delta + 1) * 3
-        print(f"count = {count}")
         for i in range(count, len(self.dB), delta + 1):
             quadro = [self.dB[i], 
                       self.dB[i - (delta + 1)],
@@ -90,11 +89,9 @@ class AnalyzeData():
         dB = self.dB[i] - 3
         for k in range(i, len(self.theta)):
             if abs(self.dB[k] - dB) < (0.5 - (self.delta + 1) * 0.1):
-                print(self.dB[k], dB)
                 break
             else:
                 k = i
-        print(f"3dB = {self.dB[k]}, max = {self.dB[i]}")
         return 2 * abs(self.theta[k] - self.theta[i])
         
     def get_zeros(self):
@@ -108,8 +105,5 @@ class AnalyzeData():
         self.read_file(phi)
         if self.delta:
             self.use_interpolation()
-        for i, dB in enumerate(self.dB):
-            if abs(dB) < (0.5 - (self.delta + 1) * 0.1):
-                print(f"theta = {self.theta[i]} dB = {self.dB[i]}")
     
     delta = 0

@@ -20,6 +20,4 @@ class Interpolation:
         di = (ci - cj) / 15
         bi = (ai - aj) / 5 + 5 * (2 * ci + cj) / 3
         return ai + bi * (x - xi) + ci * (x - xi) ** 2 + di * (x - xi) ** 3
-    def bezier(self, *args):
-        pass
         
