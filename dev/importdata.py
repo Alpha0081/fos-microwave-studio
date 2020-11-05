@@ -7,6 +7,8 @@ from sys import platform
 from shutil import copyfile  
 from pathlib import Path
 from .config import config
+import pyqtgraph as pg
+from numpy import array
 
 class ImportData(QWidget):
     def __init__(self, parent, name):
@@ -18,13 +20,13 @@ class ImportData(QWidget):
         self.move(0, 50)
         
         self.tabs = QTabWidget(self)
-        self.label1 = QLabel(self)
-        self.label2 = QLabel(self)
-        self.label1.resize(600, 512)
-        self.label2.resize(600, 512)
+        self.graph1 = pg.PlotWidget(self)
+        self.graph2 = pg.PlotWidget(self)
+        self.graph1.resize(600, 512)
+        self.graph2.resize(600, 512)
         self.tabs.resize(600, 512)
-        self.tabs.addTab(self.label1, "Normal")
-        self.tabs.addTab(self.label2, "Polar")
+        self.tabs.addTab(self.graph1, "Normal")
+        self.tabs.addTab(self.graph2, "Polar")
         
         self.textbox = QLineEdit(self)
         self.textbox.setText("-90")
@@ -118,12 +120,11 @@ class ImportData(QWidget):
         self.data.analyze(phi)
         for phi in self.data.get_zeros():
             self.zero.addItem(phi)
-        self.data.show('cache/tmp/normal.png', 0)
-        self.data.show('cache/tmp/polar.png', 1)
-        pixmap1 = QPixmap('cache/tmp/normal.png')
-        pixmap2 = QPixmap('cache/tmp/polar.png')    
-        self.label1.setPixmap(pixmap1)
-        self.label2.setPixmap(pixmap2)
+        self.graph1.getPlotItem().clear()
+        self.graph1.getPlotItem().plot(self.data.theta, self.data.dB)
+        self.graph2.getPlotItem().clear()
+        tmp = self.data.to_polar()
+        self.graph2.getPlotItem().plot(tmp[0], tmp[1])
         self.main_length.setText(str(self.data.get_length()) + "°")
         self.main_length_3dB.setText(str(self.data.get_length_3dB()) + "°")
         self.direction.setText(str(int(self.data.get_direction_of_maximum()[0])) + "°")

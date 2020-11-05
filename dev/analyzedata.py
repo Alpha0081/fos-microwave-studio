@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from dev.interpolation import Interpolation
+from math import cos, sin, pi
 
 class AnalyzeData():
     def __init__(self, parent, fname):
@@ -9,14 +10,15 @@ class AnalyzeData():
         self.fname = fname
         
 
-    def show(self, name, status):
+    def show(self, status):
         if status:
             plt.polar(self.theta, self.dB, '.', color = 'blue')
         else:
-            plt.plot(self.theta, self.dB, '.', color = 'blue')
+            tmp = self.to_polar()
+            plt.plot(tmp[0], tmp[1], '.', color = 'blue')
             plt.xlabel("θ")
             plt.ylabel("dB")
-        plt.savefig(name)
+        plt.savefig("polar.png")
         plt.close()
         
     def read_file(self, phi):
@@ -105,5 +107,13 @@ class AnalyzeData():
         self.read_file(phi)
         if self.delta:
             self.use_interpolation()
+    
+    def to_polar(self):
+        X = []
+        Y = []
+        for (phi, r) in zip(self.theta, self.dB):
+            X.append(r * cos(phi * pi / 180))
+            Y.append(r * sin(phi * pi / 180))
+        return (X, Y)
     
     delta = 0
