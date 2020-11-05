@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import QPushButton, QToolTip, QFileDialog, QMainWindow, QAc
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
-from dev.importdata import ImportData
-from dev.setting import Setting
+from .importdata import ImportData
+from .setting import Setting
 from GUI.toolbar import ToolBar
 import sys
 import os
