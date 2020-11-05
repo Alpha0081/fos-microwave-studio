@@ -25,6 +25,16 @@ class ToolBar(QMainWindow):
         filemenu.addAction(saveFile)
         filemenu.addAction(importData)
 
-        settingmenu = menubar.addMenu('&Settings')
 
+        
+        settings= QAction('Settings', parent)
+        settings.setStatusTip('Open settings')
+        settings.triggered.connect(parent.open_settings)
+        
+
+        settingmenu = menubar.addMenu('&Settings')
+        settingmenu.addAction(settings)        
+        
         helpmenu = menubar.addMenu('&Help')
+        
+        
