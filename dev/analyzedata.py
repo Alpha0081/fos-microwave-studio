@@ -116,8 +116,9 @@ class AnalyzeData():
             if i < t:
                 t = i
         return t
+        
     
-    def to_polar(self):
+    def to_polar(self, mindB):
         X = []
         Y = []
         for (phi, r) in zip(self.theta, self.dB):
@@ -125,8 +126,10 @@ class AnalyzeData():
                 X.append(r * cos(phi * pi / 180))
                 Y.append(r * sin(phi * pi / 180))
             else:
-                X.append((r - self.get_min() + 5) * cos(phi * pi / 180))
-                Y.append((r - self.get_min() + 5) * sin(phi * pi / 180))
+                X.append((r - mindB + 5) * cos(phi * pi / 180))
+                Y.append((r - mindB + 5) * sin(phi * pi / 180))
+        X.append(X[0])
+        Y.append(Y[0])
         return (X, Y)
     
     delta = 0

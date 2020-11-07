@@ -34,15 +34,31 @@ class ImportData(QWidget):
         self.graph2.getPlotItem().hideAxis('bottom')
         
         self.graph3d = gl.GLViewWidget(self)
+        self.mindB = 0
         for i in range(90, -90, -5):
             self.data.analyze(i)
+            for dB in self.data.dB:
+                if dB < self.mindB:
+                    self.mindB = dB
+        for i in range(90, -91, -5):
+            self.data.analyze(i)
+            self.data.theta.append(self.data.theta[0])
+            self.data.dB.append(self.data.dB[0])
             theta = np.array(self.data.theta) * np.pi / 180
-            dB = np.array(self.data.dB) + 20
+            dB = np.array(self.data.dB) - self.mindB + 5 if self.mindB < 0 else np.array(self.data.dB)
             x = np.array(dB * np.cos(theta) * np.cos(i * pi / 180))
             y = np.array(dB * np.sin(theta) * np.cos(i * pi / 180))
             z = np.array(dB * np.sin(i * pi / 180))
+            if i == 90:
+                print(dB)
+                print(x)
+                print(y)
+                print(z)
             pts = np.vstack([x, y, z]).transpose()
-            self.graph3d.addItem(gl.GLLinePlotItem(pos = pts, color = pg.glColor((i, 36))))
+            if i == 90:
+                self.graph3d.addItem(gl.GLLinePlotItem(pos = pts, color = pg.glColor((255, 0, 0)), glOptions='translucent'))
+            else:
+                self.graph3d.addItem(gl.GLLinePlotItem(pos = pts, glOptions='translucent'))
         
         self.graph3d.resize(600, 512)
         self.graph1.resize(600, 512)
@@ -149,7 +165,7 @@ class ImportData(QWidget):
         self.graph1.getPlotItem().clear()
         self.graph1.getPlotItem().plot(self.data.theta, self.data.dB)
         self.graph2.getPlotItem().clear()
-        tmp = self.data.to_polar()
+        tmp = self.data.to_polar(self.mindB)
         self.graph2.getPlotItem().plot(tmp[0], tmp[1])
         self.main_length.setText(str(self.data.get_length()) + "°")
         self.main_length_3dB.setText(str(self.data.get_length_3dB()) + "°")
