@@ -12,9 +12,11 @@ class AnalyzeData():
 
     def show(self, status):
         if status:
-            plt.polar(self.theta, self.dB, '.', color = 'blue')
+            tmp = self.theta
+            for t in tmp:
+                t = t * pi / 180
+            plt.polar(tmp, self.dB)
         else:
-            tmp = self.to_polar()
             plt.plot(tmp[0], tmp[1], '.', color = 'blue')
             plt.xlabel("θ")
             plt.ylabel("dB")
@@ -108,12 +110,23 @@ class AnalyzeData():
         if self.delta:
             self.use_interpolation()
     
+    def get_min(self):
+        t = self.dB[0]
+        for i in self.dB:
+            if i < t:
+                t = i
+        return t
+    
     def to_polar(self):
         X = []
         Y = []
         for (phi, r) in zip(self.theta, self.dB):
-            X.append(r * cos(phi * pi / 180))
-            Y.append(r * sin(phi * pi / 180))
+            if self.get_min() >= 0:
+                X.append(r * cos(phi * pi / 180))
+                Y.append(r * sin(phi * pi / 180))
+            else:
+                X.append((r - self.get_min() + 5) * cos(phi * pi / 180))
+                Y.append((r - self.get_min() + 5) * sin(phi * pi / 180))
         return (X, Y)
     
     delta = 0

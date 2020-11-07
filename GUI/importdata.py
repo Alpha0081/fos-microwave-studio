@@ -8,25 +8,50 @@ from shutil import copyfile
 from pathlib import Path
 from dev.config import config
 import pyqtgraph as pg
-from numpy import array
+from math import sin, cos, pi
+import pyqtgraph.opengl as gl
+import numpy as np
 
 class ImportData(QWidget):
     def __init__(self, parent, name):
         font = config.font
         super(QWidget, self).__init__(parent, Qt.Window)
         
+        self.data = AnalyzeData(self, name)
+
         self.setWindowTitle('Import')
         self.setFixedSize(850, 512)
         self.move(0, 50)
         
         self.tabs = QTabWidget(self)
+        
         self.graph1 = pg.PlotWidget(self)
+        self.graph1.getPlotItem().setLabel('left', "dB")
+        self.graph1.getPlotItem().setLabel('bottom', "θ")
+        
         self.graph2 = pg.PlotWidget(self)
+        self.graph2.getPlotItem().hideAxis('left')
+        self.graph2.getPlotItem().hideAxis('bottom')
+        
+        self.graph3d = gl.GLViewWidget(self)
+        for i in range(90, -90, -5):
+            self.data.analyze(i)
+            theta = np.array(self.data.theta) * np.pi / 180
+            dB = np.array(self.data.dB) + 20
+            x = np.array(dB * np.cos(theta) * np.cos(i * pi / 180))
+            y = np.array(dB * np.sin(theta) * np.cos(i * pi / 180))
+            z = np.array(dB * np.sin(i * pi / 180))
+            pts = np.vstack([x, y, z]).transpose()
+            self.graph3d.addItem(gl.GLLinePlotItem(pos = pts, color = pg.glColor((i, 36))))
+        
+        self.graph3d.resize(600, 512)
         self.graph1.resize(600, 512)
         self.graph2.resize(600, 512)
+
         self.tabs.resize(600, 512)
         self.tabs.addTab(self.graph1, "Normal")
         self.tabs.addTab(self.graph2, "Polar")
+        self.tabs.addTab(self.graph3d, "3D View")
         
         self.textbox = QLineEdit(self)
         self.textbox.setText("-90")
@@ -35,7 +60,7 @@ class ImportData(QWidget):
         self.textbox.setFont(QFont(font, 12))
         self.textbox.setMaxLength(3)
         
-        self.data = AnalyzeData(self, name)
+
 
         btnsave = QPushButton('Save', self)
         btnsave.resize(93, 28)
@@ -120,6 +145,7 @@ class ImportData(QWidget):
         self.data.analyze(phi)
         for phi in self.data.get_zeros():
             self.zero.addItem(phi)
+        self.data.show(1)
         self.graph1.getPlotItem().clear()
         self.graph1.getPlotItem().plot(self.data.theta, self.data.dB)
         self.graph2.getPlotItem().clear()
