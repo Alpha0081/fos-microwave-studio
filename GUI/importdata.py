@@ -11,6 +11,8 @@ import pyqtgraph as pg
 from math import sin, cos, pi
 import pyqtgraph.opengl as gl
 import numpy as np
+import pyqtgraph.exporters
+
 
 class ImportData(QWidget):
     def __init__(self, parent, name):
@@ -34,32 +36,12 @@ class ImportData(QWidget):
         self.graph2.getPlotItem().hideAxis('bottom')
         
         self.graph3d = gl.GLViewWidget(self)
-        self.mindB = 0
-        for i in range(90, -90, -5):
-            self.data.analyze(i)
-            for dB in self.data.dB:
-                if dB < self.mindB:
-                    self.mindB = dB
+        self.traces = {}
+        self.previous = -90
         for i in range(90, -91, -5):
-            self.data.analyze(i)
-            self.data.theta.append(self.data.theta[0])
-            self.data.dB.append(self.data.dB[0])
-            theta = np.array(self.data.theta) * np.pi / 180
-            dB = np.array(self.data.dB) - self.mindB + 5 if self.mindB < 0 else np.array(self.data.dB)
-            x = np.array(dB * np.cos(theta) * np.cos(i * pi / 180))
-            y = np.array(dB * np.sin(theta) * np.cos(i * pi / 180))
-            z = np.array(dB * np.sin(i * pi / 180))
-            if i == 90:
-                print(dB)
-                print(x)
-                print(y)
-                print(z)
-            pts = np.vstack([x, y, z]).transpose()
-            if i == 90:
-                self.graph3d.addItem(gl.GLLinePlotItem(pos = pts, color = pg.glColor((255, 0, 0)), glOptions='translucent'))
-            else:
-                self.graph3d.addItem(gl.GLLinePlotItem(pos = pts, glOptions='translucent'))
-        
+            self.traces[i] = gl.GLLinePlotItem(pos = self.data.to_spherical(i), antialias = True)
+            self.graph3d.addItem(self.traces[i])
+
         self.graph3d.resize(600, 512)
         self.graph1.resize(600, 512)
         self.graph2.resize(600, 512)
@@ -114,7 +96,6 @@ class ImportData(QWidget):
         max_direction.resize(81, 21)
         max_direction.move(610, 50)
         max_direction.setFont(QFont(font, 12))
-        
         zero = QLabel("Zeros :", self)
         zero.setFont(QFont(font, 12))
         zero.resize(55, 16)
@@ -159,24 +140,31 @@ class ImportData(QWidget):
         else:
             self.data.delta = 0
         self.data.analyze(phi)
-        for phi in self.data.get_zeros():
-            self.zero.addItem(phi)
-        self.data.show(1)
+        for angle in self.data.get_zeros():
+            self.zero.addItem(angle)
         self.graph1.getPlotItem().clear()
         self.graph1.getPlotItem().plot(self.data.theta, self.data.dB)
         self.graph2.getPlotItem().clear()
-        tmp = self.data.to_polar(self.mindB)
+        tmp = self.data.to_polar()
         self.graph2.getPlotItem().plot(tmp[0], tmp[1])
+        
+        
+        self.traces[self.previous].setData(pos = self.data.to_spherical(self.previous), color = pg.glColor((255, 255, 255))) 
+        self.traces[phi].setData(pos = self.data.to_spherical(phi), color = pg.glColor((255, 0, 0)))
+        
+         
         self.main_length.setText(str(self.data.get_length()) + "°")
         self.main_length_3dB.setText(str(self.data.get_length_3dB()) + "°")
         self.direction.setText(str(int(self.data.get_direction_of_maximum()[0])) + "°")
+        self.previous = phi
     
     def save_analyze(self):
-        if self.tabs.currentIndex():
-            fileName, _ = QFileDialog.getSaveFileName(self, '',"polar(" + self.textbox.text() + ").png", '*.png')
-            if fileName:
-                pass
-        else:
-            fileName, _ = QFileDialog.getSaveFileName(self, '',"normal(" + self.textbox.text() + ").png", '*.png')
-            if fileName:
-                pass
+        fileName, _ = QFileDialog.getSaveFileName(self, '',"normal(" + self.textbox.text() + ").png", '*.png')
+        if fileName:
+            pg.exporters.ImageExporter(self.graph1.plotItem).export(fileName)
+        fileName, _ = QFileDialog.getSaveFileName(self, '',"polar(" + self.textbox.text() + ").png", '*.png')
+        if fileName:
+            pg.exporters.ImageExporter(self.graph2.plotItem).export(fileName)
+        fileName, _ = QFileDialog.getSaveFileName(self, '',"3DView.png", '*.png')
+        if fileName:
+            self.graph3d.grabFrameBuffer().save(fileName)

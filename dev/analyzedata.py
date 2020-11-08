@@ -1,35 +1,27 @@
 import matplotlib.pyplot as plt
 from dev.interpolation import Interpolation
-from math import cos, sin, pi
+from math import cos, pi, sin
+import numpy as np
 
 class AnalyzeData():
     def __init__(self, parent, fname):
-        self.phi = []
-        self.dB = []
         self.parent = parent
         self.fname = fname
+        self.read_file(90)
+        self.mindB = self.dB.min()
+        for i in range(85, -91, -5):
+            self.read_file(i)
+            if self.mindB > self.dB.min():
+                self.mindB = self.dB.min()
         
-
-    def show(self, status):
-        if status:
-            tmp = self.theta
-            for t in tmp:
-                t = t * pi / 180
-            plt.polar(tmp, self.dB)
-        else:
-            plt.plot(tmp[0], tmp[1], '.', color = 'blue')
-            plt.xlabel("θ")
-            plt.ylabel("dB")
-        plt.savefig("polar.png")
-        plt.close()
         
     def read_file(self, phi):
         '''
             Метод для чтения данных из файла.
         '''
         delta = self.delta
-        self.theta = [0] * (72 + (73 * delta) + 2)
-        self.dB = [0] * (72 + (73 * delta) + 2)
+        self.theta = np.zeros(72 + (73 * delta) + 2)
+        self.dB = np.zeros(72 + (73 * delta) + 2)
         count = 1 + delta
         k = (phi + 90) / 5
         with open(self.fname) as t:
@@ -52,7 +44,7 @@ class AnalyzeData():
             self.dB[i - 1] = self.dB[delta + 1]
             self.dB[-i] = self.dB[-delta-2]
             self.theta[-i] = self.theta[-delta-2]
-    
+
     def use_interpolation(self):
         '''
             Метод для добавление точек в искомый массив с использованием 
@@ -109,27 +101,31 @@ class AnalyzeData():
         self.read_file(phi)
         if self.delta:
             self.use_interpolation()
-    
-    def get_min(self):
-        t = self.dB[0]
-        for i in self.dB:
-            if i < t:
-                t = i
-        return t
         
     
-    def to_polar(self, mindB):
-        X = []
-        Y = []
-        for (phi, r) in zip(self.theta, self.dB):
-            if self.get_min() >= 0:
-                X.append(r * cos(phi * pi / 180))
-                Y.append(r * sin(phi * pi / 180))
-            else:
-                X.append((r - mindB + 5) * cos(phi * pi / 180))
-                Y.append((r - mindB + 5) * sin(phi * pi / 180))
-        X.append(X[0])
-        Y.append(Y[0])
-        return (X, Y)
+    def to_polar(self):
+        x = np.zeros(self.dB.size + 1)
+        y = np.zeros(self.dB.size + 1)
+        x[:-1] = (self.dB + 5 - self.mindB) * np.cos(self.theta * pi / 180)
+        y[:-1] = (self.dB + 5 - self.mindB) * np.sin(self.theta * pi / 180)
+        x[-1] = x[0]
+        y[-1] = y[0]
+        return x, y
+    
+    def to_spherical(self, phi):
+        x = np.zeros(self.dB.size + 1)
+        y = np.zeros(self.dB.size + 1)
+        z = np.zeros(self.dB.size + 1)
+        self.analyze(phi)
+        x[:-1] = (self.dB + 5 - self.mindB) * np.cos(self.theta * pi / 180) * cos(phi * pi / 180) 
+        y[:-1] = (self.dB + 5 - self.mindB) * np.sin(self.theta * pi / 180) * cos(phi * pi / 180)
+        z[:-1] = (self.dB + 5 - self.mindB) * sin(phi * pi / 180)
+        x[-1] = x[0]
+        y[-1] = y[0]
+        z[-1] = z[0]
+        return np.vstack([x, y, z]).transpose()
+        
+
     
     delta = 0
+    
