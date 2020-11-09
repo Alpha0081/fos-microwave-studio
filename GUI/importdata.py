@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QTabWidget, QLineEdit, QPushButton, QCheckBox, QListWidget, QFileDialog
-from PyQt5.QtGui import QPixmap, QFont
+from PyQt5.QtGui import QPixmap, QFont, QVector3D
 from PyQt5.QtCore import Qt
 from dev.analyzedata import AnalyzeData
 from os import system
@@ -36,12 +36,27 @@ class ImportData(QWidget):
         self.graph2.getPlotItem().hideAxis('bottom')
         
         self.graph3d = gl.GLViewWidget(self)
-        self.traces = {}
+        self.tracesTheta = {}
+        self.tracesPhi = {}
+        
+        self.surface = {}
+        
         self.previous = -90
         for i in range(90, -91, -5):
-            self.traces[i] = gl.GLLinePlotItem(pos = self.data.to_spherical(i), antialias = True)
-            self.graph3d.addItem(self.traces[i])
+            self.tracesTheta[i] = gl.GLLinePlotItem(pos = self.data.to_spherical(i), antialias = True)
+            self.graph3d.addItem(self.tracesTheta[i])
+        for i in range(-180, 176, 5):
+            self.tracesPhi[i] = gl.GLLinePlotItem(pos = self.data.to_spherical(i, i), antialias = True)
+            self.graph3d.addItem(self.tracesPhi[i])
 
+
+
+
+        
+        
+        
+        
+        
         self.graph3d.resize(600, 512)
         self.graph1.resize(600, 512)
         self.graph2.resize(600, 512)
@@ -149,8 +164,8 @@ class ImportData(QWidget):
         self.graph2.getPlotItem().plot(tmp[0], tmp[1])
         
         
-        self.traces[self.previous].setData(pos = self.data.to_spherical(self.previous), color = pg.glColor((255, 255, 255))) 
-        self.traces[phi].setData(pos = self.data.to_spherical(phi), color = pg.glColor((255, 0, 0)))
+        self.tracesTheta[self.previous].setData(pos = self.data.to_spherical(self.previous), color = pg.glColor((255, 255, 255))) 
+        self.tracesTheta[phi].setData(pos = self.data.to_spherical(phi), color = pg.glColor((255, 0, 0)))
         
          
         self.main_length.setText(str(self.data.get_length()) + "°")
