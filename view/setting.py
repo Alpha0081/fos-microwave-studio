@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QTabWidget, QLineEdit, QPushButton, QCheckBox, QListWidget, QFileDialog
 from PyQt5.QtCore import Qt
-from dev.config import config
+from models.config import config
 
 
 class Setting(QWidget):

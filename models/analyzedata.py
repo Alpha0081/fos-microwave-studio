@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
-from dev.interpolation import Interpolation
+from models.interpolation import Interpolation
 from math import cos, pi, sin
 import numpy as np
+from re import split
 
 class AnalyzeData():
     def __init__(self, parent, fname):
@@ -9,10 +10,13 @@ class AnalyzeData():
         self.fname = fname
         self.read_file(90, None)
         self.mindB = self.dB.min()
+        self.maxdB = self.dB.max()
         for i in range(85, -91, -5):
             self.read_file(i, None)
             if self.mindB > self.dB.min():
                 self.mindB = self.dB.min()
+            if self.maxdB < self.dB.max():
+                self.maxdB = self.dB.max()
         
         
     def read_file(self, theta, phi):
@@ -28,16 +32,11 @@ class AnalyzeData():
             with open(self.fname) as t:
                 for i, line in enumerate(t):
                     if i > 72 * k + 1 and i < 74 + 72 * k:
-                        nums = []
-                        num = ""
-                        for sym in line:
-                            if sym != ' ':
-                                num += sym
-                            elif len(num) > 0 and sym == ' ':
-                                nums.append(float(num))
-                                num = ""
-                        self.theta[count] = nums[0]
-                        self.dB[count] = nums[2]
+                        nums = np.array(split("\s+", line))
+                        index = np.where(nums == '')
+                        nums = np.delete(nums, index)
+                        self.theta[count] = float(nums[0])
+                        self.dB[count] = float(nums[2])
                         count += (delta + 1)
             t.close()
             for i in range(1, delta + 2):
@@ -46,30 +45,18 @@ class AnalyzeData():
                 self.dB[-i] = self.dB[-delta-2]
                 self.theta[-i] = self.theta[-delta-2]
         else:
-            if phi == 165:
-                print("OK")
             self.theta = np.zeros(37)
             self.dB = np.zeros(37)
             k = (phi + 180) / 5
-            print(k)
             count = 0
             with open(self.fname) as t:
                 for i, line in enumerate(t):
-                    if i == 0:
-                        print("Yes")
                     if (i - 2) % 72 == k and i >= 2:
-                        nums = []
-                        num = ""
-                        for sym in line:
-                            if sym != ' ':
-                                num += sym
-                            elif len(num) > 0 and sym == ' ':
-                                nums.append(float(num))
-                                num = ""
-                        if phi == -180:
-                            print(nums)
-                        self.theta[count] = nums[1]
-                        self.dB[count] = nums[2]
+                        nums = np.array(split("\s+", line))
+                        index = np.where(nums == '')
+                        nums = np.delete(nums, index)
+                        self.theta[count] = float(nums[1])
+                        self.dB[count] = float(nums[2])
                         count += 1
             t.close()
 

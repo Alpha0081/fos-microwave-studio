@@ -4,7 +4,7 @@ from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtWidgets import QApplication
 from .importdata import ImportData
 from .setting import Setting
-from GUI.toolbar import ToolBar
+from view.toolbar import ToolBar
 import sys
 import os
 

@@ -1,12 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QTabWidget, QLineEdit, QPushButton, QCheckBox, QListWidget, QFileDialog
 from PyQt5.QtGui import QPixmap, QFont, QVector3D
 from PyQt5.QtCore import Qt
-from dev.analyzedata import AnalyzeData
 from os import system
 from sys import platform
 from shutil import copyfile  
 from pathlib import Path
-from dev.config import config
+from models.config import config
+from viewmodels.importvm import Importvm
+
 import pyqtgraph as pg
 from math import sin, cos, pi
 import pyqtgraph.opengl as gl
@@ -18,8 +19,8 @@ class ImportData(QWidget):
     def __init__(self, parent, name):
         font = config.font
         super(QWidget, self).__init__(parent, Qt.Window)
-        
-        self.data = AnalyzeData(self, name)
+
+        self.vm = Importvm(name)
 
         self.setWindowTitle('Import')
         self.setFixedSize(850, 512)
@@ -35,27 +36,14 @@ class ImportData(QWidget):
         self.graph2.getPlotItem().hideAxis('left')
         self.graph2.getPlotItem().hideAxis('bottom')
         
+        
         self.graph3d = gl.GLViewWidget(self)
-        self.tracesTheta = {}
-        self.tracesPhi = {}
         
-        self.surface = {}
-        
-        self.previous = -90
         for i in range(90, -91, -5):
-            self.tracesTheta[i] = gl.GLLinePlotItem(pos = self.data.to_spherical(i), antialias = True)
-            self.graph3d.addItem(self.tracesTheta[i])
+            self.graph3d.addItem(self.vm._tracesTheta[i])
+        
         for i in range(-180, 176, 5):
-            self.tracesPhi[i] = gl.GLLinePlotItem(pos = self.data.to_spherical(i, i), antialias = True)
-            self.graph3d.addItem(self.tracesPhi[i])
-
-
-
-
-        
-        
-        
-        
+            self.graph3d.addItem(self.vm._tracesPhi[i])
         
         self.graph3d.resize(600, 512)
         self.graph1.resize(600, 512)
@@ -73,13 +61,11 @@ class ImportData(QWidget):
         self.textbox.setFont(QFont(font, 12))
         self.textbox.setMaxLength(3)
         
-
-
         btnsave = QPushButton('Save', self)
         btnsave.resize(93, 28)
         btnsave.move(740, 470)
         btnsave.setFont(QFont(font, 12))
-        btnsave.clicked.connect(self.save_analyze)
+        btnsave.clicked.connect(self.save_button_clicked)
         
         btn = QPushButton('Analyze', self)
         btn.resize(93, 28)
@@ -142,38 +128,48 @@ class ImportData(QWidget):
         self.main_length_3dB.resize(51, 16)
 
     def analyze_button_clicked(self):
+        self.vm.analyze_button_clicked(int(self.textbox.text()), self.interpolation.checkState())
+        self.textbox.setText(str(self.vm._phi))
+        
         self.zero.clear()
-        phi = int(self.textbox.text())
-        phi = phi - (phi % 5)
-        if phi > 90:
-            phi = 90
-        if phi < -90:
-            phi = -90
-        self.textbox.setText(str(phi))
-        if self.interpolation.checkState():
-            self.data.delta = 1
-        else:
-            self.data.delta = 0
-        self.data.analyze(phi)
-        for angle in self.data.get_zeros():
+        for angle in self.vm._angles_of_zero:
             self.zero.addItem(angle)
+        
         self.graph1.getPlotItem().clear()
-        self.graph1.getPlotItem().plot(self.data.theta, self.data.dB)
+        self.graph1.getPlotItem().plot(self.vm._cartesian_coords[:, 0], self.vm._cartesian_coords[:, 1], pen = (255, 0, 0))
+        
         self.graph2.getPlotItem().clear()
-        tmp = self.data.to_polar()
-        self.graph2.getPlotItem().plot(tmp[0], tmp[1])
+        self.graph2.setXRange(-self.vm._maxR, self.vm._maxR)
+        self.graph2.setYRange(-self.vm._maxR, self.vm._maxR)
         
         
-        self.tracesTheta[self.previous].setData(pos = self.data.to_spherical(self.previous), color = pg.glColor((255, 255, 255))) 
-        self.tracesTheta[phi].setData(pos = self.data.to_spherical(phi), color = pg.glColor((255, 0, 0)))
+        for circle in self.vm._circles:
+            self.graph2.addItem(circle)
         
-         
-        self.main_length.setText(str(self.data.get_length()) + "°")
-        self.main_length_3dB.setText(str(self.data.get_length_3dB()) + "°")
-        self.direction.setText(str(int(self.data.get_direction_of_maximum()[0])) + "°")
-        self.previous = phi
-    
-    def save_analyze(self):
+        for pts in self.vm._lines_grid:
+            self.graph2.getPlotItem().plot(pts[:, 0], pts[:, 1], pen = pg.mkPen(0.2))
+        
+        self.graph2.getPlotItem().plot(self.vm._polar_coords[:, 0], self.vm._polar_coords[:, 1], pen = (255, 0, 0))
+        
+        
+        for degrees in self.vm._degrees:
+            text = pg.TextItem(text = degrees[0] + "°", color = (255, 255, 255))
+            text.setPos(degrees[1])
+            text.setAngle(int(degrees[0]) - 90)
+            self.graph2.addItem(text)
+            
+        for dB in self.vm._dB:
+            text = pg.TextItem(text = dB[0] + "dB", color = (255, 255, 255))
+            text.setPos(dB[1])
+            self.graph2.addItem(text)
+        
+
+        self.main_length.setText(str(self.vm._main_length) + "°")
+        self.main_length_3dB.setText(str(self.vm._main_length_3dB) + "°")
+        self.direction.setText(str(int(self.vm._direction)) + "°")
+        
+        
+    def save_button_clicked(self):
         fileName, _ = QFileDialog.getSaveFileName(self, '',"normal(" + self.textbox.text() + ").png", '*.png')
         if fileName:
             pg.exporters.ImageExporter(self.graph1.plotItem).export(fileName)
