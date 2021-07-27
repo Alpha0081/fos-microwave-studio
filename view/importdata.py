@@ -7,18 +7,20 @@ from shutil import copyfile
 from pathlib import Path
 from models.config import config
 from viewmodels.importvm import Importvm
+from viewmodels.plotcanvas import PlotCanvas
+from viewmodels.plot3dcanvas import Plot3DCanvas
 
-import pyqtgraph as pg
+
+import matplotlib.pyplot as plt
 from math import sin, cos, pi
-import pyqtgraph.opengl as gl
 import numpy as np
-import pyqtgraph.exporters
+
 
 
 class ImportData(QWidget):
     def __init__(self, parent, name):
         font = config.font
-        super(QWidget, self).__init__(parent, Qt.Window)
+        super().__init__(parent, Qt.Window)
 
         self.vm = Importvm(name)
 
@@ -27,23 +29,17 @@ class ImportData(QWidget):
         self.move(0, 50)
         
         self.tabs = QTabWidget(self)
+
+        self.graph1 = PlotCanvas(self, "normal")
+        self.graph1.set_label_axes("θ","dB")
+
         
-        self.graph1 = pg.PlotWidget(self)
-        self.graph1.getPlotItem().setLabel('left', "dB")
-        self.graph1.getPlotItem().setLabel('bottom', "θ")
+        self.graph2 = PlotCanvas(self, "polar")
         
-        self.graph2 = pg.PlotWidget(self)
-        self.graph2.getPlotItem().hideAxis('left')
-        self.graph2.getPlotItem().hideAxis('bottom')
+                
+        self.graph3d = Plot3DCanvas(self)
         
-        
-        self.graph3d = gl.GLViewWidget(self)
-        
-        for i in range(90, -91, -5):
-            self.graph3d.addItem(self.vm._tracesTheta[i])
-        
-        for i in range(-180, 176, 5):
-            self.graph3d.addItem(self.vm._tracesPhi[i])
+        self.graph3d.plot(self.vm._spherical_x, self.vm._spherical_y, self.vm._spherical_z)
         
         self.graph3d.resize(600, 512)
         self.graph1.resize(600, 512)
@@ -55,7 +51,7 @@ class ImportData(QWidget):
         self.tabs.addTab(self.graph3d, "3D View")
         
         self.textbox = QLineEdit(self)
-        self.textbox.setText("-90")
+        self.textbox.setText("0")
         self.textbox.resize(31, 22)
         self.textbox.move(640, 20)
         self.textbox.setFont(QFont(font, 12))
@@ -72,11 +68,6 @@ class ImportData(QWidget):
         btn.move(620, 470)
         btn.setFont(QFont(font, 12))
         btn.clicked.connect(self.analyze_button_clicked)        
-
-        self.interpolation = QCheckBox("Use interpolation", self)
-        self.interpolation.resize(121, 20)
-        self.interpolation.move(690, 20)
-        self.interpolation.setFont(QFont(font, 10))
 
         phi = QLabel('φ :', self)
         phi.resize(31, 21)
@@ -128,54 +119,38 @@ class ImportData(QWidget):
         self.main_length_3dB.resize(51, 16)
 
     def analyze_button_clicked(self):
-        self.vm.analyze_button_clicked(int(self.textbox.text()), self.interpolation.checkState())
+        '''
+        '''
+
+        self.vm.analyze_button_clicked(int(self.textbox.text()))
         self.textbox.setText(str(self.vm._phi))
-        
+
         self.zero.clear()
         for angle in self.vm._angles_of_zero:
             self.zero.addItem(angle)
         
-        self.graph1.getPlotItem().clear()
-        self.graph1.getPlotItem().plot(self.vm._cartesian_coords[:, 0], self.vm._cartesian_coords[:, 1], pen = (255, 0, 0))
-        
-        self.graph2.getPlotItem().clear()
-        self.graph2.setXRange(-self.vm._maxR, self.vm._maxR)
-        self.graph2.setYRange(-self.vm._maxR, self.vm._maxR)
-        
-        
-        for circle in self.vm._circles:
-            self.graph2.addItem(circle)
-        
-        for pts in self.vm._lines_grid:
-            self.graph2.getPlotItem().plot(pts[:, 0], pts[:, 1], pen = pg.mkPen(0.2))
-        
-        self.graph2.getPlotItem().plot(self.vm._polar_coords[:, 0], self.vm._polar_coords[:, 1], pen = (255, 0, 0))
-        
-        
-        for degrees in self.vm._degrees:
-            text = pg.TextItem(text = degrees[0] + "°", color = (255, 255, 255))
-            text.setPos(degrees[1])
-            text.setAngle(int(degrees[0]) - 90)
-            self.graph2.addItem(text)
-            
-        for dB in self.vm._dB:
-            text = pg.TextItem(text = dB[0] + "dB", color = (255, 255, 255))
-            text.setPos(dB[1])
-            self.graph2.addItem(text)
-        
+        self.graph1.plot(self.vm._cartesian_coords[:, 0], self.vm._cartesian_coords[:, 1], True)
+        if self.vm._mindB < self.vm._3dB[0]:
+            self.graph1.plot(self.vm._cartesian_coords[:, 0], self.vm._3dB[:-1], False, label = "-3dB", linestyle="--")
 
-        self.main_length.setText(str(self.vm._main_length) + "°")
-        self.main_length_3dB.setText(str(self.vm._main_length_3dB) + "°")
-        self.direction.setText(str(int(self.vm._direction)) + "°")
+
+        self.graph2.plot(self.vm._polar_coords[:, 0], self.vm._polar_coords[:, 1], True)
+        if self.vm._mindB < self.vm._3dB[0]:
+            self.graph2.plot(self.vm._polar_coords[:, 0], self.vm._3dB, False, c = "r", linestyle="--", label = "-3дБ")
+
+
+        ##self.main_length.setText(str(self.vm._main_length) + "°")
+        #self.main_length_3dB.setText(str(self.vm._main_length_3dB) + "°")
+        #self.direction.setText(str(int(self.vm._direction)) + "°")
         
         
     def save_button_clicked(self):
         fileName, _ = QFileDialog.getSaveFileName(self, '',"normal(" + self.textbox.text() + ").png", '*.png')
         if fileName:
-            pg.exporters.ImageExporter(self.graph1.plotItem).export(fileName)
+            pass
         fileName, _ = QFileDialog.getSaveFileName(self, '',"polar(" + self.textbox.text() + ").png", '*.png')
         if fileName:
-            pg.exporters.ImageExporter(self.graph2.plotItem).export(fileName)
+            pass
         fileName, _ = QFileDialog.getSaveFileName(self, '',"3DView.png", '*.png')
         if fileName:
-            self.graph3d.grabFrameBuffer().save(fileName)
+            pass

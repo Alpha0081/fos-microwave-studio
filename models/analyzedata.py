@@ -8,151 +8,75 @@ class AnalyzeData():
     def __init__(self, parent, fname):
         self.parent = parent
         self.fname = fname
-        self.read_file(90, None)
+        self.read_file()
         self.mindB = self.dB.min()
         self.maxdB = self.dB.max()
-        for i in range(85, -91, -5):
-            self.read_file(i, None)
-            if self.mindB > self.dB.min():
-                self.mindB = self.dB.min()
-            if self.maxdB < self.dB.max():
-                self.maxdB = self.dB.max()
         
         
-    def read_file(self, theta, phi):
+    def read_file(self):
         '''
-            Метод для чтения данных из файла.
+            Reading txt file for analyze farfield
         '''
-        if phi is None:
-            delta = self.delta
-            self.theta = np.zeros(72 + (73 * delta) + 2)
-            self.dB = np.zeros(72 + (73 * delta) + 2)
-            count = 1 + delta
-            k = (theta + 90) / 5
-            with open(self.fname) as t:
-                for i, line in enumerate(t):
-                    if i > 72 * k + 1 and i < 74 + 72 * k:
-                        nums = np.array(split("\s+", line))
-                        index = np.where(nums == '')
-                        nums = np.delete(nums, index)
-                        self.theta[count] = float(nums[0])
-                        self.dB[count] = float(nums[2])
-                        count += (delta + 1)
+        self.dB = np.zeros(2701).reshape(73, 37)
+        with open(self.fname) as t:
+            for i, line in enumerate(t):
+                if i > 30:
+                    nums = np.array(split("\s+", line))
+                    index = np.where(nums == '')
+                    nums = np.delete(nums, index)
+                    self.dB[(i - 31) // 37][(i - 31) % 37] = float(nums[2])
             t.close()
-            for i in range(1, delta + 2):
-                self.theta[i - 1] = self.theta[delta + 1]
-                self.dB[i - 1] = self.dB[delta + 1]
-                self.dB[-i] = self.dB[-delta-2]
-                self.theta[-i] = self.theta[-delta-2]
-        else:
-            self.theta = np.zeros(37)
-            self.dB = np.zeros(37)
-            k = (phi + 180) / 5
-            count = 0
-            with open(self.fname) as t:
-                for i, line in enumerate(t):
-                    if (i - 2) % 72 == k and i >= 2:
-                        nums = np.array(split("\s+", line))
-                        index = np.where(nums == '')
-                        nums = np.delete(nums, index)
-                        self.theta[count] = float(nums[1])
-                        self.dB[count] = float(nums[2])
-                        count += 1
-            t.close()
-
-    def use_interpolation(self):
-        '''
-            Метод для добавление точек в искомый массив с использованием 
-            кубической интерполяции.
-        '''
-        delta = self.delta
-        count = (delta + 1) * 3
-        for i in range(count, len(self.dB), delta + 1):
-            quadro = [self.dB[i], 
-                      self.dB[i - (delta + 1)],
-                      self.dB[i - 2 * (delta + 1)],
-                      self.dB[i - 3 * (delta + 1)]
-                      ]
-            dtheta = (self.theta[i - (delta + 1)] - self.theta[i - 2 * (delta + 1)]) / (delta + 1)
-            for j in range(delta, 0, - 1):
-                self.theta[i - 2 * (delta + 1) + j] = self.theta[i - 2 * (delta + 1)] + j * dtheta
-                self.dB[i - 2 * (delta + 1) + j] = Interpolation.cubic(quadro, self.theta[i - 2 * (delta + 1) + j], self.theta[i - (delta + 1)])
                 
-    def get_direction_of_maximum(self):
+    def get_direction_of_maximum(self, phi):
         '''
             Метод для поиска направления максимумов.
         '''
-        maximum = self.dB[0]
-        for i, dB in enumerate(self.dB):
-            if dB > maximum:
-                maximum = dB
-                num = i
-        return (self.theta[num], num)
+        return self.dB[phi // 5].argmax(), self.dB[phi // 5].max()
         
-    def get_length(self):
-        j = i = self.get_direction_of_maximum()[1]
-        while self.dB[j] > self.dB[j + 1] and j < len(self.theta):
+    def get_length(self, phi):
+        theta = np.linspace(0, 180, 37)
+        j = i = self.get_direction_of_maximum(phi)[0]
+        while self.dB[phi // 5][j] > self.dB[phi // 5][j + 1] and j < 36:
             j+=1
-        return 2 * abs(self.theta[j] - self.theta[i])
+        return 2 * abs(theta[j] - theta[i])
     
-    def get_length_3dB(self):
-        i = self.get_direction_of_maximum()[1]
-        dB = self.dB[i] - 3
-        for k in range(i, len(self.theta)):
-            if abs(self.dB[k] - dB) < (0.5 - (self.delta + 1) * 0.1):
+    def get_3dB(self, phi):
+        return self.dB[phi // 5].max() - 3
+
+
+    def get_length_3dB(self, phi):
+        theta = np.linspace(0, 180, 37)
+        i = self.get_direction_of_maximum(phi)[0]
+        dB = self.dB[phi // 5][i] - 3
+        for k in range(i, 37):
+            if abs(self.dB[phi // 5][k] - dB) < 0.5:
                 break
             else:
                 k = i
-        return 2 * abs(self.theta[k] - self.theta[i])
+        return 2 * abs(theta[k] - theta[i])
         
-    def get_zeros(self):
+    def get_zeros(self, phi):
         out = []
-        for i, dB in enumerate(self.dB):
-            if abs(dB) < (0.5 - (self.delta + 1) * 0.1):
-                out.append(str(self.theta[i]) + "°")
+        theta = np.linspace(0, 180, 37)
+        for i, dB in enumerate(self.dB[phi // 5]):
+            if abs(dB) < 0.5:
+                out.append(str(theta[i]) + "°")
         return out
                 
-    def analyze(self, phi):
-        self.read_file(phi, None)
-        if self.delta:
-            self.use_interpolation()
-        
     
-    def to_polar(self):
-        x = np.zeros(self.dB.size + 1)
-        y = np.zeros(self.dB.size + 1)
-        x[:-1] = (self.dB + 5 - self.mindB) * np.cos(self.theta * pi / 180)
-        y[:-1] = (self.dB + 5 - self.mindB) * np.sin(self.theta * pi / 180)
-        x[-1] = x[0]
-        y[-1] = y[0]
+    def to_polar(self, phi):
+
+        x = np.linspace(0, np.pi, 37)
+        y = self.dB[phi // 5]
         return x, y
     
-    def to_spherical(self, phi, theta = None):
-        if theta is None:
-            self.analyze(phi)
-            x = np.zeros(self.dB.size + 1)
-            y = np.zeros(self.dB.size + 1)
-            z = np.zeros(self.dB.size + 1)
-            x[:-1] = (self.dB + 5 - self.mindB) * np.cos(self.theta * pi / 180) * cos(phi * pi / 180) 
-            y[:-1] = (self.dB + 5 - self.mindB) * np.sin(self.theta * pi / 180) * cos(phi * pi / 180)
-            z[:-1] = (self.dB + 5 - self.mindB) * sin(phi * pi / 180)
-            x[-1] = x[0]
-            y[-1] = y[0]
-            z[-1] = z[0]
-        else:
-            self.read_file(None, theta)
-            x = (self.dB + 5 - self.mindB) * cos(theta * pi / 180) * np.cos(self.theta * pi / 180) 
-            y = (self.dB + 5 - self.mindB) * sin(theta * pi / 180) * np.cos(self.theta * pi / 180)
-            z = (self.dB + 5 - self.mindB) * np.sin(self.theta * pi / 180)
-        return np.vstack([x, y, z]).transpose()
-        
-    def to_polygon(self, phi):
-        self.read_file(None, phi)
-        x = (self.dB + 5 - self.mindB) * np.cos(phi * pi / 180) * np.cos(self.theta * pi / 180)
-        y = (self.dB + 5 - self.mindB) * np.sin(phi * pi / 180) * np.cos(self.theta * pi / 180)
-        z = ((self.dB + 5 - self.mindB) ** 2 - x.reshape(x.size, 1) ** 2 - y ** 2) ** .5
-        print(z.ndim) 
-        return x, y, z
-    
-    delta = 0
+    def to_spherical(self):
+        u = np.linspace(0, 2 * np.pi, 73)
+        v = np.linspace(0, np.pi, 37)
+        phi, theta = np.meshgrid(u, v)
+        x = self.dB.transpose() * np.cos(phi) * np.cos(theta)
+        y = self.dB.transpose() * np.sin(phi) * np.cos(theta)
+        z = self.dB.transpose() * np.sin(theta)
+        return x, y, z 
+
     
