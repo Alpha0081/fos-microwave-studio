@@ -1,7 +1,7 @@
 import sys 
 
 from PyQt5.QtWidgets import QApplication
-from view.mainwindow import MainWindow
+from GUI.mainwindow import MainWindow
 from models.config import config
 
 
