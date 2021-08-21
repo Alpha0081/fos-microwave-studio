@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>512</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QTabWidget" name="plot_tabs">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>512</width>
+     <height>512</height>
+    </rect>
+   </property>
+   <property name="baseSize">
+    <size>
+     <width>512</width>
+     <height>512</height>
+    </size>
+   </property>
+   <property name="tabPosition">
+    <enum>QTabWidget::North</enum>
+   </property>
+   <property name="currentIndex">
+    <number>2</number>
+   </property>
+   <widget class="QWidget" name="cartesian_plot">
+    <attribute name="title">
+     <string>Cartesian</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="polar_plot">
+    <attribute name="title">
+     <string>Polar</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="plot_3d">
+    <attribute name="title">
+     <string>3D</string>
+    </attribute>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="analyze_button">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>230</y>
+     <width>80</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>PushButton</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

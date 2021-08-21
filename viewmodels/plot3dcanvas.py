@@ -11,7 +11,8 @@ class Plot3DCanvas(FigureCanvas):
     def __init__(self, parent):
         self.figure = Figure()
         self.ax = self.figure.add_subplot(1, 1, 1, projection = "3d")
-        FigureCanvas.__init__(self,self.figure)
+        FigureCanvas.__init__(self, self.figure)
+        self.setParent(parent)
         FigureCanvas.setSizePolicy(self,
                 QSizePolicy.Expanding,
                 QSizePolicy.Expanding)

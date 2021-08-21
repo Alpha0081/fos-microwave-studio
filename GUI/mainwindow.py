@@ -1,45 +1,38 @@
-from PyQt5.QtWidgets import QPushButton, QToolTip, QFileDialog, QMainWindow, QAction, QWidget, QLabel
-from PyQt5.QtGui import QFont, QPixmap
-from PyQt5.QtCore import QCoreApplication, Qt
-from PyQt5.QtWidgets import QApplication
+from PyQt5 import uic
+from PyQt5.QtWidgets import QFileDialog, QMainWindow
+from models.analyzefarfield import AnalyzeFarfieldFile
 from .farfieldanalyzer import FarfieldAnalyzer
 from .setting import Setting
-from GUI.toolbar import ToolBar
-import sys
-import os
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        
-        self.toolbar = ToolBar(self)
-        
-        self.resize(640, 480)
-        self.move(0,0)
-        
-        self.setWindowTitle('CSTpy')
+        uic.loadUi("GUI/mainwindow.ui", self)
+        self.action_import_farfield.triggered.connect(self.analyze_farfield)
+        self.action_open.triggered.connect(self.open_file)
+        self.action_save.triggered.connect(self.save_file)
         self.show()
 
     def open_file(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file', '/home')[0]
-        if fname:
+        file_path = QFileDialog.getOpenFileName(self, 'Open file', '/home')[0]
+        if file_path:
             pass
 
     def save_file(self):
-        fname = QFileDialog.getSaveFileName(self, 'Open file', '/home')[0]
-        if fname:
+        file_path = QFileDialog.getSaveFileName(self, 'Open file', '/home')[0]
+        if file_path:
             pass
         
     def analyze_farfield(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file', '/home', 'Текстовый файл (*.txt)\nТаблица CSV (*.csv)\n')[0]
-        if fname:
-            im = FarfieldAnalyzer(self, fname)     
+        file_path = QFileDialog.getOpenFileName(self, 'Open file', '/home', \
+            'Текстовый файл (*.txt)\nFar-Field Source (*.ffs)\n')[0]
+        if file_path:
+            assert AnalyzeFarfieldFile.check_valid_file_format(file_path),\
+                 "NotValidFileFormat"
+            im = FarfieldAnalyzer(self, file_path)     
             im.show()
 
     def open_settings(self):
-            setting = Setting(self)
-            setting.show()
-
-
-
+        setting = Setting(self)
+        setting.show()
